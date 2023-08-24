@@ -1,3 +1,6 @@
+trigger:
+  - main
+
 variables:
   project:  './BuildInfo.Generator.csproj'
   buildPlatform: 'Any CPU'
