@@ -11,6 +11,8 @@ namespace BuildInfo.Generator
     [Generator]
     public class BuildInfoGenerator : ISourceGenerator
     {
+        private static string _cachedFullHash;
+        private static string _cachedAbbrevHash;
 
         public void Initialize(GeneratorInitializationContext context)
         {
@@ -58,13 +60,13 @@ namespace Build
     }
 }";
 
-            var fullHash = RunGit(GIT_CMD_BUILD_HASH, folder);
-            var abbrHash = RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder);
+            _cachedFullHash   ??= RunGit(GIT_CMD_BUILD_HASH, folder)
+            _cachedAbbrevHash ??= RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder)
 
             return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
                .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
-               .Replace("$(CommitHashFull)", fullHash)
-               .Replace("$(CommitHashAbbrev)", abbrHash)
+               .Replace("$(CommitHashFull)", _cachedFullHash)
+               .Replace("$(CommitHashAbbrev)", _cachedAbbrevHash)
                .Replace('\'', '"');
         }
 
@@ -103,7 +105,10 @@ namespace Build
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
-                // Business logic to decide what we're interested in goes here
+                // Try to find a the partial class in the format:
+                // namespace Build;
+                // public partial class Info { }
+
                 if (syntaxNode is ClassDeclarationSyntax cds && cds.Identifier.ValueText == "Info")
                 {
                     if (!TryGetParentSyntax(cds, out NamespaceDeclarationSyntax namespaceDeclarationSyntax))
@@ -120,10 +125,9 @@ namespace Build
 
             public static bool TryGetParentSyntax<T>(SyntaxNode syntaxNode, out T result) where T : SyntaxNode
             {
-                // set defaults
                 result = null;
 
-                if (syntaxNode == null)
+                if (syntaxNode is null)
                 {
                     return false;
                 }
@@ -132,7 +136,7 @@ namespace Build
                 {
                     syntaxNode = syntaxNode.Parent;
 
-                    if (syntaxNode == null)
+                    if (syntaxNode is null)
                     {
                         return false;
                     }
