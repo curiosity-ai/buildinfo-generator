@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace BuildInfo.Generator
@@ -24,10 +25,16 @@ namespace BuildInfo.Generator
             var syntaxReceiver = (FilterBuildInfoReceiver)context.SyntaxReceiver;
             var pathToFile     = syntaxReceiver.ClassToAugment.SyntaxTree.FilePath;
             var folder         = Path.GetDirectoryName(pathToFile);
-            context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder), Encoding.UTF8));
+
+            var mainSyntaxTree = context.Compilation.SyntaxTrees
+                                 .First(x => x.HasCompilationUnitRoot);
+
+            var projectPath = Path.GetDirectoryName(mainSyntaxTree.FilePath);
+
+            context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder, projectPath), Encoding.UTF8));
         }
 
-        private string BuildBuildInfo(string folder)
+        private string BuildBuildInfo(string folder, string projectPath)
         {
             const string template =
                 @"///////////////////////////////////////////////////////////////////
@@ -60,8 +67,8 @@ namespace Build
     }
 }";
 
-            _cachedFullHash   ??= ReadCached(folder, "build-info-hash-full.hash",   () => RunGit(GIT_CMD_BUILD_HASH, folder));
-            _cachedAbbrevHash ??= ReadCached(folder, "build-info-hash-abbrev.hash", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
+            _cachedFullHash   ??= ReadCached(projectPath, folder, "build-info-hash-full.hash",   () => RunGit(GIT_CMD_BUILD_HASH, folder));
+            _cachedAbbrevHash ??= ReadCached(projectPath, folder, "build-info-hash-abbrev.hash", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
 
             return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
                            .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
@@ -70,9 +77,9 @@ namespace Build
                            .Replace('\'', '"');
         }
 
-        private static string ReadCached(string workDir, string cacheName, Func<string> generate )
+        private static string ReadCached(string projectPath, string workDir, string cacheName, Func<string> generate )
         {
-            var file   = Path.Combine(Environment.ExpandEnvironmentVariables("TEMP"), $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
+            var file   = Path.Combine(projectPath, "obj", $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
             string val = null;
 
             if (File.Exists(file))
