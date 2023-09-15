@@ -26,12 +26,9 @@ namespace BuildInfo.Generator
             var pathToFile     = syntaxReceiver.ClassToAugment.SyntaxTree.FilePath;
             var folder         = Path.GetDirectoryName(pathToFile);
 
-            var mainSyntaxTree = context.Compilation.SyntaxTrees
-                                 .First(x => x.HasCompilationUnitRoot);
+            if(!context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirectory)) projectDirectory = null;
 
-            var projectPath = Path.GetDirectoryName(mainSyntaxTree.FilePath);
-
-            context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder, projectPath), Encoding.UTF8));
+            context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder, projectDirectory), Encoding.UTF8));
         }
 
         private string BuildBuildInfo(string folder, string projectPath)
@@ -79,7 +76,12 @@ namespace Build
 
         private static string ReadCached(string projectPath, string workDir, string cacheName, Func<string> generate )
         {
-            var file   = Path.Combine(projectPath, "obj", $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
+            var objDir = Path.Combine(projectPath, "obj");
+            
+            if (!Directory.Exists(objDir)) Directory.CreateDirectory(objDir);
+
+            var file   = Path.Combine(objDir, $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
+
             string val = null;
 
             if (File.Exists(file))
