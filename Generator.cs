@@ -60,8 +60,8 @@ namespace Build
     }
 }";
 
-            _cachedFullHash   ??= RunGit(GIT_CMD_BUILD_HASH, folder)
-            _cachedAbbrevHash ??= RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder)
+            _cachedFullHash   ??= RunGit(GIT_CMD_BUILD_HASH, folder);
+            _cachedAbbrevHash ??= RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder);
 
             return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
                .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
