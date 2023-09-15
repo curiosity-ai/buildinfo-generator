@@ -72,7 +72,7 @@ namespace Build
 
         private static string ReadCached(string workDir, string cacheName, Func<string> generate )
         {
-            var file   = Path.Combine(Path.GetTempPath(), $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
+            var file   = Path.Combine(Environment.ExpandEnvironmentVariables("TEMP"), $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
             string val = null;
 
             if (File.Exists(file))
