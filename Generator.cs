@@ -26,15 +26,10 @@ namespace BuildInfo.Generator
             var pathToFile     = syntaxReceiver.ClassToAugment.SyntaxTree.FilePath;
             var folder         = Path.GetDirectoryName(pathToFile);
 
-            var mainSyntaxTree = context.Compilation.SyntaxTrees
-                                    .First(x => x.HasCompilationUnitRoot);
-
-            var projectDirectory = Path.GetDirectoryName(mainSyntaxTree.FilePath);
-
-            context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder, projectDirectory), Encoding.UTF8));
+            context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder), Encoding.UTF8));
         }
 
-        private string BuildBuildInfo(string folder, string projectPath)
+        private string BuildBuildInfo(string folder)
         {
             const string template =
                 @"///////////////////////////////////////////////////////////////////
@@ -67,8 +62,8 @@ namespace Build
     }
 }";
 
-            _cachedFullHash   ??= ReadCached(projectPath, folder, "build-info-hash-full.hash",   () => RunGit(GIT_CMD_BUILD_HASH, folder));
-            _cachedAbbrevHash ??= ReadCached(projectPath, folder, "build-info-hash-abbrev.hash", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
+            _cachedFullHash   ??= ReadCached(folder, ".build-info-hash-full.tmp",   () => RunGit(GIT_CMD_BUILD_HASH, folder));
+            _cachedAbbrevHash ??= ReadCached(folder, ".build-info-hash-abbrev.tmp", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
 
             return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
                            .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
@@ -77,13 +72,16 @@ namespace Build
                            .Replace('\'', '"');
         }
 
-        private static string ReadCached(string projectPath, string workDir, string cacheName, Func<string> generate )
+        private static string ReadCached(string folder, string cacheName, Func<string> generate)
         {
-            var objDir = Path.Combine(projectPath, "obj");
-            
-            if (!Directory.Exists(objDir)) Directory.CreateDirectory(objDir);
+            var objDir = Path.Combine(folder, "obj");
 
-            var file   = Path.Combine(objDir, $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
+            if (!Directory.Exists(objDir))
+            {
+                Directory.CreateDirectory(objDir);
+            }
+
+            var file   = Path.Combine(objDir, cacheName);
 
             string val = null;
 
