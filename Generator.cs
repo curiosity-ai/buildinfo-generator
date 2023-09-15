@@ -61,7 +61,7 @@ namespace Build
     }
 }";
 
-            _cachedFullHash   ??= ReadCached(folder, "build-info-hash-full.hash", () => RunGit(GIT_CMD_BUILD_HASH, folder));
+            _cachedFullHash   ??= ReadCached(folder, "build-info-hash-full.hash",   () => RunGit(GIT_CMD_BUILD_HASH, folder));
             _cachedAbbrevHash ??= ReadCached(folder, "build-info-hash-abbrev.hash", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
 
             return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
@@ -76,7 +76,7 @@ namespace Build
             var file   = Path.Combine(Path.GetTempPath(), $"{workDir.Hash128()}.{cacheName}");
             string val = null;
 
-            if(File.Exists(file))
+            if (File.Exists(file))
             {
                 try
                 {
