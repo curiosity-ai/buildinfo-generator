@@ -26,7 +26,10 @@ namespace BuildInfo.Generator
             var pathToFile     = syntaxReceiver.ClassToAugment.SyntaxTree.FilePath;
             var folder         = Path.GetDirectoryName(pathToFile);
 
-            if(!context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirectory)) projectDirectory = null;
+            var mainSyntaxTree = context.Compilation.SyntaxTrees
+                                    .First(x => x.HasCompilationUnitRoot);
+
+            var projectDirectory = Path.GetDirectoryName(mainSyntaxTree.FilePath);
 
             context.AddSource($"Build.Info.g.cs", SourceText.From(BuildBuildInfo(folder, projectDirectory), Encoding.UTF8));
         }
