@@ -26,12 +26,6 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="[3.3.4]" PrivateAssets="all"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Generator dependencies -->
-        <PackageReference Include="Mosaik.Core" Version="0.0.41502" GeneratePathProperty="true" PrivateAssets="all"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" GeneratePathProperty="true" PrivateAssets="all"/>
-    </ItemGroup>
-
     <PropertyGroup>
         <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
     </PropertyGroup>

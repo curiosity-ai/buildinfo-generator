@@ -5,7 +5,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using UID;
 
 namespace BuildInfo.Generator
 {
@@ -65,15 +64,15 @@ namespace Build
             _cachedAbbrevHash ??= ReadCached(folder, "build-info-hash-abbrev.hash", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
 
             return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
-               .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
-               .Replace("$(CommitHashFull)", _cachedFullHash)
-               .Replace("$(CommitHashAbbrev)", _cachedAbbrevHash)
-               .Replace('\'', '"');
+                           .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
+                           .Replace("$(CommitHashFull)", _cachedFullHash)
+                           .Replace("$(CommitHashAbbrev)", _cachedAbbrevHash)
+                           .Replace('\'', '"');
         }
 
         private static string ReadCached(string workDir, string cacheName, Func<string> generate )
         {
-            var file   = Path.Combine(Path.GetTempPath(), $"{workDir.Hash128()}.{cacheName}");
+            var file   = Path.Combine(Path.GetTempPath(), $"{workDir.Replace("/", "_").Replace("\\","_")}.{cacheName}");
             string val = null;
 
             if (File.Exists(file))
