@@ -65,8 +65,12 @@ namespace Build
             _cachedFullHash   ??= ReadCached(folder, ".build-info-hash-full.tmp",   () => RunGit(GIT_CMD_BUILD_HASH, folder));
             _cachedAbbrevHash ??= ReadCached(folder, ".build-info-hash-abbrev.tmp", () => RunGit(GIT_CMD_BUILD_HASH_ABBREV, folder));
 
-            return template.Replace("$(BUILD_DATE_BINARY_UTC)", DateTimeOffset.UtcNow.DateTime.ToBinary().ToString("x16"))
-                           .Replace("$(BUILD_DATE_UTC)", DateTimeOffset.UtcNow.ToString("u"))
+            //Changed from current time to a hard-coded time at midnight, because otherwise this breaks Hot Reload when debugging code
+
+            var todayMidnight = new DateTimeOffset(DateTimeOffset.UtcNow.Year, DateTimeOffset.UtcNow.Month, DateTimeOffset.UtcNow.Day, 0, 0, 0, DateTimeOffset.UtcNow.Offset);
+
+            return template.Replace("$(BUILD_DATE_BINARY_UTC)", todayMidnight.DateTime.ToBinary().ToString("x16"))
+                           .Replace("$(BUILD_DATE_UTC)", todayMidnight.ToString("u"))
                            .Replace("$(CommitHashFull)", _cachedFullHash)
                            .Replace("$(CommitHashAbbrev)", _cachedAbbrevHash)
                            .Replace('\'', '"');
